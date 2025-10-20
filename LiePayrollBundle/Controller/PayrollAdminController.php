@@ -37,6 +37,11 @@ final class PayrollAdminController extends AbstractController
     #[IsGranted(PayrollPermissions::ROLE_PAYROLL_ADMIN)]
     public function recalc(User $user, string $month): RedirectResponse
     {
+        if (!preg_match('/^\d{4}-\d{2}$/', $month)) {
+            $this->addFlash("error", "Ungültiges Monatsformat. Erwartet: YYYY-MM");
+            return $this->redirectToRoute("lie_payroll_index");
+        }
+
         $this->service->buildOrRecalculate($user, $month);
         $this->addFlash("success", "Payroll für {$user->getDisplayName()} {$month} berechnet.");
         return $this->redirectToRoute("lie_payroll_index", ["month" => $month]);
@@ -45,6 +50,11 @@ final class PayrollAdminController extends AbstractController
     #[Route("/show/{id}/{month}", name: "lie_payroll_show", methods: ["GET"])]
     public function show(User $user, string $month, PayrollPeriodRepository $repo): Response
     {
+        if (!preg_match('/^\d{4}-\d{2}$/', $month)) {
+            $this->addFlash("error", "Ungültiges Monatsformat. Erwartet: YYYY-MM");
+            return $this->redirectToRoute("lie_payroll_index");
+        }
+
         $period = $repo->findOneByUserAndMonth($user, $month);
         if (!$period) {
             $period = $this->service->buildOrRecalculate($user, $month);
@@ -57,6 +67,11 @@ final class PayrollAdminController extends AbstractController
     #[Route("/payslip/{id}/{month}", name: "lie_payroll_payslip", methods: ["GET"])]
     public function payslip(User $user, string $month, PayrollPeriodRepository $repo): Response
     {
+        if (!preg_match('/^\d{4}-\d{2}$/', $month)) {
+            $this->addFlash("error", "Ungültiges Monatsformat. Erwartet: YYYY-MM");
+            return $this->redirectToRoute("lie_payroll_index");
+        }
+
         $period = $repo->findOneByUserAndMonth($user, $month);
         if (!$period) {
             $period = $this->service->buildOrRecalculate($user, $month);

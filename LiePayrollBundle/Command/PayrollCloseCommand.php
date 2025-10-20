@@ -23,6 +23,12 @@ final class PayrollCloseCommand extends \Symfony\Component\Console\Command\Comma
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $month = (string) $input->getArgument("month");
+
+        if (!preg_match('/^\d{4}-\d{2}$/', $month)) {
+            $output->writeln("<error>Invalid month format '{$month}'. Expected YYYY-MM</error>");
+            return self::FAILURE;
+        }
+
         foreach ($this->users->findAll() as $u) {
             $this->svc->buildOrRecalculate($u, $month);
             $output->writeln("Calculated: {$u->getDisplayName()} - {$month}");

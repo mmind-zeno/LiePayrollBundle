@@ -22,9 +22,16 @@ final class HtmlRenderer implements PdfRenderer
     public function renderPayslipToFile(string $template, array $context, string $absolutePath): string
     {
         $html = $this->twig->render($template, $context);
-        file = open($absolutePath, "w", encoding="utf-8") ;
-        file.write($html);
-        file.close()
+
+        $dir = dirname($absolutePath);
+        if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
+            throw new \RuntimeException(sprintf('Directory "%s" could not be created', $dir));
+        }
+
+        if (file_put_contents($absolutePath, $html) === false) {
+            throw new \RuntimeException(sprintf('Failed to write payslip to file: %s', $absolutePath));
+        }
+
         return $absolutePath;
     }
 
