@@ -1,0 +1,16 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  KimaiPlugin\LiePayrollBundle\:
+    resource: "../../*"
+    exclude:
+      - "../../{Resources,Migrations,Tests,composer.json}"
+
+  KimaiPlugin\LiePayrollBundle\Controller\:
+    resource: "../../Controller"
+    tags: ["controller.service_arguments"]
+
+  KimaiPlugin\LiePayrollBundle\Service\PdfRenderer: '@KimaiPlugin\LiePayrollBundle\Service\HtmlRenderer'

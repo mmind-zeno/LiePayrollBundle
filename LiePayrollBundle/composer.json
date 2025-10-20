@@ -1,0 +1,20 @@
+{
+  "name": "kimai-plugin/lie-payroll-bundle",
+  "description": "LiePayrollBundle (MVP) for Kimai: periods, calculation, payslip (HTML/PDF-ready).",
+  "type": "kimai-plugin",
+  "license": "MIT",
+  "require": {
+    "php": ">=8.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "KimaiPlugin\\\\LiePayrollBundle\\\\": ""
+    }
+  },
+  "extra": {
+    "kimai": {
+      "name": "LiePayrollBundle",
+      "require": "^2.0"
+    }
+  }
+}
