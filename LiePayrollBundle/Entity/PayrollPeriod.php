@@ -8,6 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: "KimaiPlugin\\LiePayrollBundle\\Repository\\PayrollPeriodRepository")]
 #[ORM\Table(name: "payroll_period")]
+#[ORM\UniqueConstraint(name: "uniq_user_month", columns: ["user_id", "month"])]
 class PayrollPeriod
 {
     public const STATUS_DRAFT    = "draft";
@@ -53,6 +54,9 @@ class PayrollPeriod
 
     public function __construct(User $user, string $month)
     {
+        if (!preg_match('/^\d{4}-\d{2}$/', $month)) {
+            throw new \InvalidArgumentException(sprintf('Invalid month format "%s". Expected YYYY-MM', $month));
+        }
         $this->user = $user;
         $this->month = $month;
         $now = new \DateTimeImmutable("now");
