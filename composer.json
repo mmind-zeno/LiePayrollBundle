@@ -9,12 +9,12 @@
   },
   "autoload": {
     "psr-4": {
-      "KimaiPlugin\\LiePayrollBundle\\": ""
+      "KimaiPlugin\\LiePayrollBundle\\": "LiePayrollBundle/"
     }
   },
   "extra": {
     "kimai": {
-      "require": 20000,
+      "require": 23800,
       "version": "1.0.0",
       "name": "LiePayrollBundle"
     }
