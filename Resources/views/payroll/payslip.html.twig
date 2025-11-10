@@ -1,38 +1,842 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
-  <meta charset="utf-8"/>
-  <title>Lohnblatt {{ p.user.displayName }} – {{ p.month }}</title>
-  <style>
-    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
-    .wrap { max-width: 760px; margin: 24px auto; border: 1px solid #ddd; padding: 24px; }
-    h2 { margin: 0 0 8px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    .right { text-align: right; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lohnabrechnung {{ p.month }} - {{ p.user.displayName }}</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 12mm;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 9.5pt;
+            line-height: 1.35;
+            color: #333;
+            background: white;
+        }
+        
+        .container {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 12mm;
+            margin: 0 auto;
+            background: white;
+            position: relative;
+        }
+        
+        /* Wasserzeichen für Entwürfe */
+        {% if p.status == 'draft' %}
+        .container::before {
+            content: "E N T W U R F";
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 72pt;
+            font-weight: 900;
+            color: rgba(0, 0, 0, 0.04);
+            z-index: 1;
+            pointer-events: none;
+            white-space: nowrap;
+            letter-spacing: 10px;
+        }
+        {% endif %}
+        
+        .content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* Header Section */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            border-bottom: 2.5px solid #003d7a;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .company-section {
+            flex: 1;
+        }
+        
+        .company-name {
+            font-size: 18pt;
+            font-weight: bold;
+            color: #003d7a;
+            margin-bottom: 6px;
+        }
+        
+        .company-details {
+            font-size: 9pt;
+            color: #666;
+            line-height: 1.3;
+        }
+        
+        .doc-title {
+            text-align: right;
+            flex: 0.5;
+        }
+        
+        .doc-title h1 {
+            font-size: 16pt;
+            color: #003d7a;
+            margin-bottom: 4px;
+        }
+        
+        .period {
+            font-size: 10pt;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        
+        /* Status Badge */
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border: 1.5pt solid;
+            font-size: 8pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5pt;
+            margin-top: 4px;
+        }
+        
+        .status-draft {
+            border-color: #d97706;
+            color: #d97706;
+            background: #fef3c7;
+        }
+        
+        .status-approved {
+            border-color: #059669;
+            color: #059669;
+            background: #d1fae5;
+        }
+        
+        .status-paid {
+            border-color: #2563eb;
+            color: #2563eb;
+            background: #dbeafe;
+        }
+        
+        /* Two Column Layout for Employee Info */
+        .two-column-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        /* Employee Information Box */
+        .info-box {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 6px;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            page-break-inside: avoid;
+        }
+        
+        .info-box-title {
+            font-size: 10pt;
+            font-weight: 700;
+            color: #003d7a;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1.5px solid #003d7a;
+        }
+        
+        .info-row {
+            display: flex;
+            margin: 4px 0;
+            font-size: 8.5pt;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+            min-width: 110px;
+            flex-shrink: 0;
+        }
+        
+        .info-value {
+            color: #212529;
+            flex: 1;
+            border-bottom: 1px dotted #adb5bd;
+            padding-left: 4px;
+        }
+        
+        /* Period & Work Time Info */
+        .period-info {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 15px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            page-break-inside: avoid;
+        }
+        
+        .period-item {
+            text-align: center;
+        }
+        
+        .period-label {
+            font-size: 8pt;
+            color: #0277bd;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3pt;
+            margin-bottom: 2px;
+        }
+        
+        .period-value {
+            font-size: 11pt;
+            color: #01579b;
+            font-weight: 700;
+        }
+        
+        /* Section Title */
+        .section-title {
+            font-size: 11pt;
+            font-weight: 600;
+            color: #003d7a;
+            margin: 15px 0 8px 0;
+            padding: 4px 6px;
+            background: linear-gradient(90deg, #e3f2fd 0%, transparent 100%);
+            border-left: 4px solid #003d7a;
+            page-break-after: avoid;
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+            font-size: 9pt;
+        }
+        
+        th {
+            background: #003d7a;
+            color: white;
+            padding: 6px 10px;
+            text-align: left;
+            font-size: 9pt;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 6px 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .amount {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+            font-weight: 500;
+        }
+        
+        .total-row {
+            font-weight: bold;
+            background: #e3f2fd !important;
+        }
+        
+        .total-row td {
+            border-top: 2px solid #003d7a;
+            border-bottom: 2px solid #003d7a;
+            padding: 8px 10px;
+            font-size: 10pt;
+        }
+        
+        .net-salary {
+            background: #003d7a !important;
+            color: white;
+        }
+        
+        .net-salary td {
+            font-size: 11pt;
+            padding: 10px;
+            font-weight: 700;
+        }
+        
+        .subtotal-row {
+            font-weight: 600;
+            background: #f0f0f0 !important;
+            border-top: 1px solid #003d7a;
+        }
+        
+        /* Summary Grid */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+            page-break-inside: avoid;
+        }
+        
+        .summary-box {
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .summary-title {
+            font-size: 8.5pt;
+            font-weight: 700;
+            color: #495057;
+            margin-bottom: 6px;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.3pt;
+        }
+        
+        .summary-content {
+            display: flex;
+            justify-content: space-between;
+            margin: 3px 0;
+            font-size: 8pt;
+        }
+        
+        .summary-content-label {
+            color: #666;
+        }
+        
+        .summary-content-value {
+            font-weight: 600;
+            color: #212529;
+        }
+        
+        /* Footer */
+        .footer {
+            margin-top: 20px;
+            padding-top: 12px;
+            border-top: 2px solid #dee2e6;
+            page-break-inside: avoid;
+        }
+        
+        .signature-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .signature-box {
+            text-align: center;
+        }
+        
+        .signature-line {
+            border-bottom: 1px solid #333;
+            margin-bottom: 4px;
+            height: 35px;
+        }
+        
+        .signature-label {
+            font-size: 8pt;
+            color: #666;
+        }
+        
+        .legal-notice {
+            margin-top: 15px;
+            padding: 8px;
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            font-size: 8pt;
+            color: #856404;
+            line-height: 1.4;
+            page-break-inside: avoid;
+        }
+        
+        .document-id {
+            text-align: center;
+            font-size: 7.5pt;
+            color: #999;
+            margin-top: 12px;
+            padding-top: 8px;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        /* Print Button */
+        .print-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .print-btn {
+            background: #003d7a;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .print-btn:hover {
+            background: #002a56;
+        }
+        
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+            
+            .container {
+                width: 100%;
+                padding: 0;
+                margin: 0;
+            }
+            
+            .print-controls {
+                display: none !important;
+            }
+            
+            .info-box,
+            .period-info,
+            .summary-grid,
+            .footer,
+            table {
+                page-break-inside: avoid;
+            }
+            
+            .section-title {
+                page-break-after: avoid;
+            }
+        }
+        
+        @media screen {
+            body {
+                background: #e5e7eb;
+                padding: 15px;
+            }
+            
+            .container {
+                box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+                margin: 15px auto;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="wrap">
-    <h2>Lohnblatt</h2>
-    <div>Monat: <strong>{{ p.month }}</strong></div>
-    <div>Mitarbeiter: <strong>{{ p.user.displayName }}</strong></div>
+    <!-- Print Controls -->
+    <div class="print-controls">
+        <button class="print-btn" onclick="window.print()">
+            <svg width="18" height="18" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd"/>
+            </svg>
+            Drucken
+        </button>
+    </div>
 
-    <table>
-      <tr><th>Stunden</th><td class="right">{{ p.totalHours }}</td></tr>
-      <tr><th>Stundenlohn</th><td class="right">{{ p.hourlyRate }} CHF</td></tr>
-      <tr><th>Bruttolohn</th><td class="right">{{ p.grossSalary }} CHF</td></tr>
-      <tr><th>Abzüge</th><td>
-        <ul style="margin:0;padding-left:16px;">
-          {% for d in p.deductions %}
-          <li>{{ d.code }} ({{ d.rate }}%) – {{ d.amount }} CHF</li>
-          {% endfor %}
-        </ul>
-      </td></tr>
-      <tr><th><strong>Netto</strong></th><td class="right"><strong>{{ p.netSalary }} CHF</strong></td></tr>
-    </table>
-
-    <p style="margin-top:16px;font-size:12px;color:#666;">Hinweis: Vorschau als HTML. Für PDF später dompdf/knp_snappy einbinden.</p>
-  </div>
+    <div class="container">
+        <div class="content">
+            <!-- Header -->
+            <div class="header">
+                <div class="company-section">
+                    <div class="company-name">vegAluna GmbH</div>
+                    <div class="company-details">
+                        Zollstrasse 27 • 9490 Vaduz, Liechtenstein<br>
+                        Tel: +423 XXX XX XX • E-Mail: info@vegaluna.li<br>
+                        UID: CHE-123.456.789 • AHV-Betriebsnummer: 2.123.456
+                    </div>
+                </div>
+                <div class="doc-title">
+                    <h1>LOHNABRECHNUNG</h1>
+                    <div class="period">Abrechnungsmonat: {{ p.month }}</div>
+                    {% if p.status == 'draft' %}
+                        <span class="status-badge status-draft">Entwurf</span>
+                    {% elseif p.status == 'approved' %}
+                        <span class="status-badge status-approved">Freigegeben</span>
+                    {% elseif p.status == 'paid' %}
+                        <span class="status-badge status-paid">Bezahlt</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Employee & Company Information -->
+            <div class="two-column-section">
+                <!-- Arbeitgeber -->
+                <div class="info-box">
+                    <div class="info-box-title">Arbeitgeber</div>
+                    <div class="info-row">
+                        <span class="info-label">Firma:</span>
+                        <span class="info-value">vegAluna GmbH</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Adresse:</span>
+                        <span class="info-value">Zollstrasse 27, 9490 Vaduz</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">AHV-Betriebs-Nr:</span>
+                        <span class="info-value">2.123.456</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">UID:</span>
+                        <span class="info-value">CHE-123.456.789</span>
+                    </div>
+                </div>
+                
+                <!-- Arbeitnehmer -->
+                <div class="info-box">
+                    <div class="info-box-title">Arbeitnehmer</div>
+                    <div class="info-row">
+                        <span class="info-label">Name, Vorname:</span>
+                        <span class="info-value">{{ p.user.displayName }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Adresse:</span>
+                        <span class="info-value">{{ p.user.address|default('—') }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Geburtsdatum:</span>
+                        <span class="info-value">{{ p.user.birthdate|default('—') }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">AHV-Nummer:</span>
+                        <span class="info-value">{{ p.user.ahvNumber|default('756.XXXX.XXXX.XX') }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Additional Employee Info -->
+            <div class="two-column-section">
+                <div class="info-box">
+                    <div class="info-box-title">Beschäftigungsdaten</div>
+                    <div class="info-row">
+                        <span class="info-label">Personal-Nr (PEID):</span>
+                        <span class="info-value">{{ '%06d'|format(p.user.id) }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Eintrittsdatum:</span>
+                        <span class="info-value">{{ p.user.hireDate|default('—') }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Funktion:</span>
+                        <span class="info-value">{{ p.user.position|default('—') }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Abteilung:</span>
+                        <span class="info-value">{{ p.user.department|default('—') }}</span>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <div class="info-box-title">Persönliche Daten</div>
+                    <div class="info-row">
+                        <span class="info-label">Zivilstand:</span>
+                        <span class="info-value">{{ p.user.maritalStatus|default('—') }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Anzahl Kinder:</span>
+                        <span class="info-value">{{ p.user.numberOfChildren|default('0') }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Wohnort/Gemeinde:</span>
+                        <span class="info-value">{{ p.user.municipality|default('—') }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Steuergemeinde:</span>
+                        <span class="info-value">{{ p.user.taxMunicipality|default('—') }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Work Period Information -->
+            <div class="period-info">
+                <div class="period-item">
+                    <div class="period-label">Beschäftigungsgrad</div>
+                    <div class="period-value">{{ p.employmentLevel|default('100') }}%</div>
+                </div>
+                <div class="period-item">
+                    <div class="period-label">Sollstunden</div>
+                    <div class="period-value">{{ p.targetHours|default(p.totalHours) }} h</div>
+                </div>
+                <div class="period-item">
+                    <div class="period-label">Ist-Stunden</div>
+                    <div class="period-value">{{ p.totalHours }} h</div>
+                </div>
+                <div class="period-item">
+                    <div class="period-label">Stundensatz</div>
+                    <div class="period-value">{{ p.hourlyRate }} CHF</div>
+                </div>
+            </div>
+            
+            <!-- BRUTTO-BEZÜGE -->
+            <div class="section-title">BRUTTO-BEZÜGE</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 50%">Bezeichnung</th>
+                        <th style="width: 20%">Anzahl/Satz</th>
+                        <th style="width: 30%">Betrag (CHF)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Grundlohn / Monatslohn</td>
+                        <td class="amount">{{ p.totalHours }} Std. à {{ p.hourlyRate }}</td>
+                        <td class="amount">{{ p.baseSalary|default(p.grossSalary) }}</td>
+                    </tr>
+                    {% if p.overtime|default(0) > 0 %}
+                    <tr>
+                        <td>Überstunden (125%)</td>
+                        <td class="amount">{{ p.overtime }} Std. à {{ (p.hourlyRate * 1.25)|number_format(2) }}</td>
+                        <td class="amount">{{ (p.overtime * p.hourlyRate * 1.25)|number_format(2) }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if p.nightShift|default(0) > 0 %}
+                    <tr>
+                        <td>Nachtzuschlag (25%)</td>
+                        <td class="amount">{{ p.nightShift }} Std.</td>
+                        <td class="amount">{{ (p.nightShift * p.hourlyRate * 0.25)|number_format(2) }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if p.sundayWork|default(0) > 0 %}
+                    <tr>
+                        <td>Sonntagszuschlag (50%)</td>
+                        <td class="amount">{{ p.sundayWork }} Std.</td>
+                        <td class="amount">{{ (p.sundayWork * p.hourlyRate * 0.5)|number_format(2) }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if p.bonus|default(0) > 0 %}
+                    <tr>
+                        <td>Prämien / Bonus</td>
+                        <td class="amount">—</td>
+                        <td class="amount">{{ p.bonus|number_format(2) }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if p.thirteenthSalary|default(0) > 0 %}
+                    <tr>
+                        <td>13. Monatslohn (anteilig)</td>
+                        <td class="amount">1/12</td>
+                        <td class="amount">{{ p.thirteenthSalary|number_format(2) }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if p.childAllowance|default(0) > 0 %}
+                    <tr>
+                        <td>Kinderzulagen ({{ p.numberOfChildren|default(0) }} Kind/er)</td>
+                        <td class="amount">{{ p.numberOfChildren|default(0) }} × 300</td>
+                        <td class="amount">{{ p.childAllowance|number_format(2) }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if p.vacationCompensation|default(0) > 0 %}
+                    <tr>
+                        <td>Ferienentschädigung (8.33%)</td>
+                        <td class="amount">8.33%</td>
+                        <td class="amount">{{ p.vacationCompensation|number_format(2) }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if p.expenseAllowance|default(0) > 0 %}
+                    <tr>
+                        <td>Spesenpauschale</td>
+                        <td class="amount">—</td>
+                        <td class="amount">{{ p.expenseAllowance|number_format(2) }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr class="subtotal-row">
+                        <td colspan="2">Zwischensumme Brutto-Bezüge</td>
+                        <td class="amount">{{ p.grossSalary }} CHF</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <!-- ABZÜGE -->
+            <div class="section-title">GESETZLICHE ABZÜGE</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 50%">Bezeichnung</th>
+                        <th style="width: 20%">Satz/Bemessung</th>
+                        <th style="width: 30%">Betrag (CHF)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set totalDeductions = 0 %}
+                    {% for d in p.deductions %}
+                        {% set totalDeductions = totalDeductions + d.amount %}
+                        <tr>
+                            <td>
+                                {% if d.code == 'AHV' %}
+                                    AHV/IV/EO (Alters-, Invaliden- und Erwerbsersatzversicherung)
+                                {% elseif d.code == 'ALV' %}
+                                    ALV (Arbeitslosenversicherung)
+                                {% elseif d.code == 'NBU' %}
+                                    NBU (Nichtberufsunfallversicherung)
+                                {% elseif d.code == 'BU' %}
+                                    BU (Berufsunfallversicherung)
+                                {% elseif d.code == 'BPVG' %}
+                                    BPVG (Berufliche Vorsorge / Pensionskasse)
+                                {% elseif d.code == 'KTG' %}
+                                    KTG (Krankentaggeldversicherung)
+                                {% elseif d.code == 'QUELL' %}
+                                    Quellensteuer
+                                {% else %}
+                                    {{ d.code }}
+                                {% endif %}
+                            </td>
+                            <td class="amount">{{ d.rate }}%</td>
+                            <td class="amount">-{{ d.amount }}</td>
+                        </tr>
+                    {% endfor %}
+                    <tr class="total-row">
+                        <td colspan="2">Gesamt gesetzliche Abzüge</td>
+                        <td class="amount">-{{ "%.2f"|format(totalDeductions) }} CHF</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <!-- WEITERE ABZÜGE (optional) -->
+            {% if p.otherDeductions|default([])|length > 0 %}
+            <div class="section-title">WEITERE ABZÜGE</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 70%">Bezeichnung</th>
+                        <th style="width: 30%">Betrag (CHF)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set otherDeductionsTotal = 0 %}
+                    {% for d in p.otherDeductions %}
+                        {% set otherDeductionsTotal = otherDeductionsTotal + d.amount %}
+                        <tr>
+                            <td>{{ d.description }}</td>
+                            <td class="amount">-{{ d.amount }}</td>
+                        </tr>
+                    {% endfor %}
+                    <tr class="total-row">
+                        <td>Gesamt weitere Abzüge</td>
+                        <td class="amount">-{{ "%.2f"|format(otherDeductionsTotal) }} CHF</td>
+                    </tr>
+                </tbody>
+            </table>
+            {% endif %}
+            
+            <!-- NET SALARY -->
+            <table>
+                <tr class="net-salary">
+                    <td style="width: 70%">NETTO-AUSZAHLUNGSBETRAG</td>
+                    <td class="amount" style="width: 30%;">{{ p.netSalary }} CHF</td>
+                </tr>
+            </table>
+            
+            <!-- SUMMARY GRID -->
+            <div class="summary-grid">
+                <div class="summary-box">
+                    <div class="summary-title">Jahressummen (YTD)</div>
+                    <div class="summary-content">
+                        <span class="summary-content-label">Brutto YTD:</span>
+                        <span class="summary-content-value">{{ p.ytdGross|default(p.grossSalary) }} CHF</span>
+                    </div>
+                    <div class="summary-content">
+                        <span class="summary-content-label">Netto YTD:</span>
+                        <span class="summary-content-value">{{ p.ytdNet|default(p.netSalary) }} CHF</span>
+                    </div>
+                    <div class="summary-content">
+                        <span class="summary-content-label">Abzüge YTD:</span>
+                        <span class="summary-content-value">{{ "%.2f"|format(p.ytdDeductions|default(totalDeductions)) }} CHF</span>
+                    </div>
+                </div>
+                
+                <div class="summary-box">
+                    <div class="summary-title">Ferien & Überzeit</div>
+                    <div class="summary-content">
+                        <span class="summary-content-label">Ferienguthaben:</span>
+                        <span class="summary-content-value">{{ p.vacationBalance|default('0') }} Tage</span>
+                    </div>
+                    <div class="summary-content">
+                        <span class="summary-content-label">Bezogene Ferien:</span>
+                        <span class="summary-content-value">{{ p.vacationTaken|default('0') }} Tage</span>
+                    </div>
+                    <div class="summary-content">
+                        <span class="summary-content-label">Restferien:</span>
+                        <span class="summary-content-value">{{ p.vacationRemaining|default('0') }} Tage</span>
+                    </div>
+                    <div class="summary-content">
+                        <span class="summary-content-label">Überstunden-Saldo:</span>
+                        <span class="summary-content-value">{{ p.overtimeBalance|default('0') }} Std.</span>
+                    </div>
+                </div>
+                
+                <div class="summary-box">
+                    <div class="summary-title">Zahlungsinformationen</div>
+                    <div class="summary-content">
+                        <span class="summary-content-label">Zahlungsdatum:</span>
+                        <span class="summary-content-value">{{ p.paymentDate|default("now"|date("d.m.Y")) }}</span>
+                    </div>
+                    <div class="summary-content">
+                        <span class="summary-content-label">Referenz:</span>
+                        <span class="summary-content-value">{{ p.user.id }}-{{ p.month }}</span>
+                    </div>
+                    <div class="summary-content">
+                        <span class="summary-content-label">Zahlungsart:</span>
+                        <span class="summary-content-value">Banküberweisung</span>
+                    </div>
+                    <div class="summary-content">
+                        <span class="summary-content-label">IBAN:</span>
+                        <span class="summary-content-value">{{ p.user.iban|default('—') }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Legal Notice -->
+            <div class="legal-notice">
+                <strong>Wichtiger Hinweis gemäss liechtensteinischem Arbeitsrecht:</strong> 
+                Diese Lohnabrechnung dient als offizieller Nachweis für die erhaltene Vergütung und die abgeführten Sozialversicherungsbeiträge gemäss den liechtensteinischen Bestimmungen (AHV, ALV, BPVG). Die Abrechnung wurde gemäss Art. 323b OR erstellt und entspricht den gesetzlichen Anforderungen. Bitte bewahren Sie dieses Dokument sorgfältig für Ihre Unterlagen und für die Steuererklärung auf. Bei Unstimmigkeiten oder Fragen wenden Sie sich bitte innerhalb von 14 Tagen an die Personalabteilung unter info@vegaluna.li oder +423 XXX XX XX.
+            </div>
+            
+            <!-- Signatures -->
+            <div class="footer">
+                <div class="signature-section">
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
+                        <div class="signature-label">Ort, Datum, Unterschrift Arbeitgeber</div>
+                    </div>
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
+                        <div class="signature-label">Ort, Datum, Unterschrift Arbeitnehmer<br>(Empfangsbestätigung)</div>
+                    </div>
+                </div>
+                
+                <div class="document-id">
+                    Dokument-ID: PAY-{{ p.user.id }}-{{ p.month }}-{{ "now"|date("YmdHis") }}<br>
+                    Erstellt am: {{ "now"|date("d.m.Y H:i") }} Uhr | vegAluna GmbH, Vaduz, Liechtenstein<br>
+                    Diese Abrechnung wurde maschinell erstellt und ist ohne Unterschrift gültig.
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

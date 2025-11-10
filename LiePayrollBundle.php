@@ -1,10 +1,13 @@
 <?php
-declare(strict_types=1);
-
 namespace KimaiPlugin\LiePayrollBundle;
 
+use App\Plugin\PluginInterface;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
-final class LiePayrollBundle extends Bundle
+class LiePayrollBundle extends Bundle implements PluginInterface
 {
+    public function getPath(): string
+    {
+        return \dirname(__DIR__) . '/LiePayrollBundle';
+    }
 }

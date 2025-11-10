@@ -1,0 +1,4 @@
+lie_payroll:
+  resource: '../../Controller/'
+  type: attribute
+  prefix: /

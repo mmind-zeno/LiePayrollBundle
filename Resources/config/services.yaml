@@ -5,12 +5,30 @@ services:
     public: false
 
   KimaiPlugin\LiePayrollBundle\:
-    resource: "../../*"
+    resource: '../../*'
     exclude:
-      - "../../{Resources,Migrations,Tests,composer.json}"
+      - '../../{Resources,Migrations,Tests,composer.json}'
 
   KimaiPlugin\LiePayrollBundle\Controller\:
-    resource: "../../Controller"
-    tags: ["controller.service_arguments"]
+    resource: '../../Controller'
+    tags: ['controller.service_arguments']
 
-  KimaiPlugin\LiePayrollBundle\Service\PdfRenderer: '@KimaiPlugin\LiePayrollBundle\Service\HtmlRenderer'
+  # Service Aliases
+  KimaiPlugin\LiePayrollBundle\Service\PdfRenderer:
+    alias: KimaiPlugin\LiePayrollBundle\Service\HtmlRenderer
+
+  # Explicit Services
+  KimaiPlugin\LiePayrollBundle\Service\PayrollService:
+    autowire: true
+    
+  KimaiPlugin\LiePayrollBundle\Service\HtmlRenderer:
+    autowire: true
+    
+  KimaiPlugin\LiePayrollBundle\Service\PayrollCalculator:
+    autowire: true
+    
+  KimaiPlugin\LiePayrollBundle\Service\SettingsService:
+    autowire: true
+    
+  KimaiPlugin\LiePayrollBundle\Repository\PayrollPeriodRepository:
+    autowire: true

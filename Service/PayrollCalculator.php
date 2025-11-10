@@ -13,17 +13,25 @@ final class PayrollCalculator
 
         $def = fn(string $k, string $fallback) => (string) ($this->settings->get($k, $fallback) ?? $fallback);
 
-        $ahv = $def("payroll.AHV_RATE", "5.30"); // %
-        $alv = $def("payroll.ALV_RATE", "1.10");
-        $nbu = $def("payroll.NBU_RATE", "1.00");
+        // Liechtenstein Sozialversicherungssätze 2025
+        $ahvIv = $def("payroll.AHV_IV_RATE", "4.70");  // AHV/IV: 4.7%
+        $alv = $def("payroll.ALV_RATE", "1.10");       // ALV: 1.1%
+        $nbu = $def("payroll.NBU_RATE", "1.19");       // NBU: ~1.19% (Durchschnitt)
+        $bpvg = $def("payroll.BPVG_RATE", "0.00");     // BPVG: optional, variabel
 
         $ded = [];
-        $ded[] = ["code" => "AHV", "rate" => $ahv, "amount" => $this->pct($gross, $ahv)];
+        $ded[] = ["code" => "AHV/IV", "rate" => $ahvIv, "amount" => $this->pct($gross, $ahvIv)];
         $ded[] = ["code" => "ALV", "rate" => $alv, "amount" => $this->pct($gross, $alv)];
-        $ded[] = ["code" => "NBU", "rate" => $nbu, "amount" => $this->pct($gross, $nbu)];
+        $ded[] = ["code" => "NBU Anteil", "rate" => $nbu, "amount" => $this->pct($gross, $nbu)];
+        
+        if ($bpvg !== "0.00") {
+            $ded[] = ["code" => "BPVG", "rate" => $bpvg, "amount" => $this->pct($gross, $bpvg)];
+        }
 
         $totalDed = "0.00";
-        foreach ($ded as $d) { $totalDed = bcadd($totalDed, $d["amount"], 2); }
+        foreach ($ded as $d) { 
+            $totalDed = bcadd($totalDed, $d["amount"], 2); 
+        }
 
         $net = bcsub($gross, $totalDed, 2);
 

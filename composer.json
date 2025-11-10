@@ -1,22 +1,27 @@
 {
   "name": "kimai/lie-payroll-bundle",
-  "description": "Payroll management for Kimai: salary calculation, deductions (AHV/ALV/NBU), payslip generation",
+  "description": "Payroll and salary management for Liechtenstein",
   "type": "kimai-plugin",
-  "license": "MIT",
-  "version": "1.0.0",
+    "version": "0.90.0",  
+    "authors": [
+        {
+            "name": "Zeno John",
+            "homepage": "https://mmind.ai"
+        }
+    ],
+  "license": "proprietary",
   "require": {
     "kimai/kimai2-composer": "^2.0"
   },
   "autoload": {
     "psr-4": {
-      "KimaiPlugin\\LiePayrollBundle\\": "LiePayrollBundle/"
+      "KimaiPlugin\\LiePayrollBundle\\": ""
     }
   },
   "extra": {
-    "kimai": {
-      "require": 23800,
-      "version": "1.0.0",
-      "name": "LiePayrollBundle"
-    }
+      "kimai": {
+          "require": 23600,
+          "name": "LIE Pay Roll"
+      }
   }
 }

@@ -4,11 +4,35 @@
   <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
       <h3 class="card-title">Payroll Übersicht – Monat: {{ month }}</h3>
-      <form method="get" class="d-flex gap-2">
-        <input class="form-control" type="month" name="month" value="{{ month }}">
-        <button class="btn btn-primary">Wechseln</button>
-      </form>
+      <div class="d-flex gap-2">
+        <a href="{{ path('payroll_export_summary', {month: month}) }}" class="btn btn-info">
+          <i class="ti ti-file-analytics"></i> Zusammenfassung
+        </a>
+        <a href="{{ path('payroll_export_csv', {month: month}) }}" class="btn btn-success">
+          <i class="ti ti-download"></i> CSV Export
+        </a>
+        <form method="get" class="d-flex gap-2">
+          <input class="form-control" type="month" name="month" value="{{ month }}">
+          <button class="btn btn-primary">Wechseln</button>
+        </form>
+      </div>
     </div>
+
+    <div class="card-body">
+      <div class="d-flex gap-2 mb-3">
+        <form method="post" action="{{ path('lie_payroll_batch_calculate', {month: month}) }}" onsubmit="return confirm('Alle Mitarbeiter für {{ month }} berechnen?')">
+          <button type="submit" class="btn btn-warning">
+            <i class="ti ti-refresh"></i> Alle neu berechnen
+          </button>
+        </form>
+        <form method="post" action="{{ path('lie_payroll_batch_approve', {month: month}) }}" onsubmit="return confirm('Alle Draft-Perioden freigeben?')">
+          <button type="submit" class="btn btn-primary">
+            <i class="ti ti-check"></i> Alle freigeben
+          </button>
+        </form>
+      </div>
+    </div>
+
     <div class="table-responsive">
       <table class="table card-table table-striped">
         <thead><tr><th>Mitarbeiter</th><th>Aktionen</th></tr></thead>
@@ -17,9 +41,10 @@
           <tr>
             <td>{{ u.displayName }}</td>
             <td class="d-flex gap-2">
-              <a class="btn btn-outline-primary btn-sm" href="{{ path("lie_payroll_show", {id: u.id, month: month}) }}">Anzeigen</a>
-              <a class="btn btn-outline-secondary btn-sm" href="{{ path("lie_payroll_recalculate", {id: u.id, month: month}) }}">Neu berechnen</a>
-              <a class="btn btn-outline-success btn-sm" href="{{ path("lie_payroll_payslip", {id: u.id, month: month}) }}" target="_blank">Lohnblatt</a>
+              <a class="btn btn-outline-primary btn-sm" href="{{ path('lie_payroll_show', {id: u.id, month: month}) }}">Anzeigen</a>
+              <a class="btn btn-outline-warning btn-sm" href="{{ path('lie_payroll_edit', {id: u.id, month: month}) }}">Bearbeiten</a>
+              <a class="btn btn-outline-secondary btn-sm" href="{{ path('lie_payroll_recalculate', {id: u.id, month: month}) }}">Neu berechnen</a>
+              <a class="btn btn-outline-success btn-sm" href="{{ path('lie_payroll_payslip', {id: u.id, month: month}) }}" target="_blank">Lohnblatt</a>
             </td>
           </tr>
         {% endfor %}

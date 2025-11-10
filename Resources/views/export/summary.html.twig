@@ -1,0 +1,110 @@
+{% extends "@LiePayroll/payroll/_layout.html.twig" %}
+
+{% block page_content %}
+<div class="container-xl">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-title">Payroll Zusammenfassung – {{ month }}</h3>
+            <div class="d-flex gap-2">
+                <a href="{{ path('payroll_export_csv', {month: month}) }}" class="btn btn-success">
+                    <i class="ti ti-download"></i> CSV Export
+                </a>
+                <a href="{{ path('lie_payroll_index', {month: month}) }}" class="btn btn-secondary">
+                    Zurück
+                </a>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Stunden</h5>
+                            <p class="fs-2 mb-0">{{ totals.hours }} h</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Brutto</h5>
+                            <p class="fs-2 mb-0">{{ totals.gross }} CHF</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Abzüge</h5>
+                            <p class="fs-2 mb-0">{{ totals.deductions }} CHF</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Netto</h5>
+                            <p class="fs-2 mb-0">{{ totals.net }} CHF</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table card-table table-hover">
+                <thead>
+                    <tr>
+                        <th>Mitarbeiter</th>
+                        <th>Status</th>
+                        <th class="text-end">Stunden</th>
+                        <th class="text-end">Stundenlohn</th>
+                        <th class="text-end">Brutto</th>
+                        <th class="text-end">Abzüge</th>
+                        <th class="text-end">Netto</th>
+                        <th>Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in periods %}
+                    {% set totalDed = '0.00' %}
+                    {% for d in p.deductions %}
+                        {% set totalDed = totalDed + d.amount %}
+                    {% endfor %}
+                    <tr>
+                        <td>{{ p.user.displayName }}</td>
+                        <td>
+                            <span class="badge bg-{{ p.status == 'draft' ? 'secondary' : (p.status == 'approved' ? 'primary' : 'success') }}">
+                                {{ p.status }}
+                            </span>
+                        </td>
+                        <td class="text-end">{{ p.totalHours }} h</td>
+                        <td class="text-end">{{ p.hourlyRate }} CHF</td>
+                        <td class="text-end">{{ p.grossSalary }} CHF</td>
+                        <td class="text-end">{{ totalDed|number_format(2, '.', '') }} CHF</td>
+                        <td class="text-end"><strong>{{ p.netSalary }} CHF</strong></td>
+                        <td>
+                            <a href="{{ path('lie_payroll_show', {id: p.user.id, month: p.month}) }}" class="btn btn-sm btn-outline-primary">
+                                Details
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="fw-bold bg-light">
+                        <td colspan="2">Total</td>
+                        <td class="text-end">{{ totals.hours }} h</td>
+                        <td></td>
+                        <td class="text-end">{{ totals.gross }} CHF</td>
+                        <td class="text-end">{{ totals.deductions }} CHF</td>
+                        <td class="text-end text-success fs-5">{{ totals.net }} CHF</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
